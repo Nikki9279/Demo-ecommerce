@@ -22,7 +22,7 @@ node index.js
 
 - [create-react-app](https://github.com/facebook/create-react-app?files=1)
 - [Node.js](https://nodejs.org/en/)
-- [core.js](https://github.com/zloirock/core-js  Modular standard library for JavaScript.)
+- [core.js](https://github.com/zloirock/core-js) Modular standard library for JavaScript.
 - [Redux](https://redux.js.org/introduction/getting-started)
 - [API stored on myjson.com](https://api.myjson.com/bins/1ek26f)
 - [Bootstrap 4.3.1](http://getbootstrap.com/)
