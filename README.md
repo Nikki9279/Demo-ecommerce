@@ -1,6 +1,5 @@
-#Ecommerce Demo#
-
-##Getting Started
+# Ecommerce Demo
+## Getting Started
 
 **To get the development environment running simply follow these steps on your command line**:
 
