@@ -3,75 +3,140 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
 import { toggleFloat } from '../../store/actions/floatBagActions';
-import { updateBag } from '../../store/actions/shoppingBagActions';
+import { selectSize, selectColor, selectQty } from '../../store/actions/detailsActions';
+import { updateBag, updateItem } from '../../store/actions/shoppingBagActions';
 import util from '../../util';
-import Item from './Item';
+import { allSizes } from '../../const';
+import Checkbox from '../Checkbox';
+import Selectbox from '../Selectbox';
 
-class FloatBag extends Component {
+const qty = [];
 
-  toggleFloat = () => {
-    this.props.toggleFloat(!this.props.isOpen);
+for (let i = 1; i <= 10; i++) {
+  qty.push({value: i, label: i});
+}
+
+class Form extends Component {
+
+  createSizesCheckboxes = (availableSizes) =>
+      allSizes.map(size =>
+          availableSizes.indexOf(size) > -1
+              ? <Checkbox classes="t-filters t-filters-available-size"
+                          value={size}
+                          label={size}
+                          handleCheckboxChange={this.toggleSizeCheckbox}
+                          isChecked={this.props.selectedSize === size}
+                          key={size}/>
+              : <Checkbox classes="t-filters t-filters-available-size disabled"
+                          value={size}
+                          label={size}
+                          key={size}/>
+      );
+
+  createColorsCheckboxes = (availableColors) =>
+      availableColors.map(filter =>
+          <Checkbox classes="t-filters t-filters-available-colors"
+                    styles={{backgroundColor: filter}}
+                    value={filter}
+                    label={''}
+                    tooltip={filter}
+                    handleCheckboxChange={this.toggleColorCheckbox}
+                    isChecked={this.props.selectedColor === filter}
+                    key={filter}/>
+      );
+
+  toggleSizeCheckbox = size => {
+    this.props.selectSize(undefined);
+    this.props.selectSize(size);
   };
 
-  handleRemove = (i) => {
-    const items = this.props.items;
-    items.splice(i, 1);
-    this.props.updateBag(items);
+  toggleColorCheckbox = color => {
+    this.props.selectColor(undefined);
+    this.props.selectColor(color);
   };
 
-  handleSubmit = () => {
-    alert('Checked out.');
+  handleQtyChnage = qty => {
+    this.props.selectQty(parseInt(qty, 10));
+  };
+
+  openFloatBag = () => {
+    this.props.toggleFloat(true);
+  };
+
+  handleOnSubmit = () => {
+    this.openFloatBag();
+    const bagItems = this.props.bagItems;
+    const order = {
+      id: this.props.product.id,
+      name: this.props.product.name,
+      price: this.props.product.price,
+      image: this.props.product.image,
+      size: this.props.selectedSize,
+      color: this.props.selectedColor,
+      qty: this.props.selectedQty
+    };
+    const updateAtIndex = bagItems.findIndex(item => (item.id === order.id && item.size === order.size && item.color === order.color));
+    if (updateAtIndex === -1) {
+      bagItems.push(order);
+      this.props.updateBag(bagItems);
+    } else {
+      const qty = bagItems[updateAtIndex].qty + order.qty;
+      this.props.updateItem({atIndex: updateAtIndex, qty: qty})
+    }
+
   };
 
   render() {
-    const isOpen = this.props.isOpen;
-
-    const items = this.props.items.length > 0
-      ? this.props.items.map((item, index) => (
-            <React.Fragment key={index}>
-              <Item product={item} onRemove={this.handleRemove} index={index}/>
-              <hr className="border-warning"/>
-            </React.Fragment>
-        ))
-      : <span className="t-float-bag-empty mb-5">Add some products to the bag :)</span>;
-
-    let subtotal = 0;
-    let itemsInBag = 0;
-    this.props.items.forEach(item => {
-      subtotal += item.price * item.qty;
-      itemsInBag += item.qty;
-    });
-
-    return(
-        <div className={`t-float-container` + (isOpen ? ' open' : '')}>
-          <div className="t-float-toggle" onClick={this.toggleFloat}><span className="t-float-count badge badge-pill badge-danger">{itemsInBag}</span></div>
-          <div className="t-float-bag col-12">
-            <p className="text-center mt-5"><img src="../../../assets/images/shopping-bag.png" width="30px" alt="Shopping bag" /></p>
-            <h4 className="text-warning text-center mb-5">SHOPPING BAG</h4>
-            {items}
-            <span className="t-float-bag-subtotal mt-3">
-              <h5 className="split-para">SUBTOTAL<span>{util.formatPrice(subtotal, this.props.currency)}</span></h5>
-            </span>
-            <button type="button" onClick={this.handleSubmit} className={`btn btn-warning btn-block mt-5 mb-5 ${items.length === 0 ? 'disabled' : ''}`}>Proceed to Checkout</button>
+    const {product, selectedSize, selectedColor, selectedQty} = this.props;
+    const isDisabled = !selectedSize || !selectedColor || selectedQty === 0;
+    return (
+        <React.Fragment>
+          <h3>{product.name}</h3>
+          <p className="text-danger"><strong>{util.formatPrice(product.price, this.props.currency)}</strong></p>
+          <div>
+            <p>Size {selectedSize}</p>
+            {this.createSizesCheckboxes(product.available_sizes)}
           </div>
-        </div>
+          <div>
+            <p>Color {selectedColor}</p>
+            {this.createColorsCheckboxes(product.available_colors)}
+          </div>
+          <div>
+            <p>Qty {selectedQty}</p>
+            <p>
+              <Selectbox options={qty} classes={'form-control t-product-qty'} handleOnChange={this.handleQtyChnage} />
+            </p>
+          </div>
+          <p>
+            <button type="button" onClick={this.handleOnSubmit} className="btn btn-warning btn-block" disabled={isDisabled}>Add to Bag</button>
+          </p>
+        </React.Fragment>
     )
   }
 
 }
 
-FloatBag.propTypes = {
+Form.propTypes = {
   toggleFloat: PropTypes.func.isRequired,
+  selectSize: PropTypes.func.isRequired,
+  selectColor: PropTypes.func.isRequired,
+  selectQty: PropTypes.func.isRequired,
   updateBag: PropTypes.func.isRequired,
-  isOpen: PropTypes.bool.isRequired,
-  items: PropTypes.array.isRequired,
-  currency: PropTypes.string.isRequired
+  updateItem: PropTypes.func.isRequired,
+  product: PropTypes.object.isRequired,
+  selectedSize: PropTypes.string,
+  selectedColor: PropTypes.string,
+  selectedQty: PropTypes.number.isRequired,
+  currency: PropTypes.string.isRequired,
+  bagItems: PropTypes.array
 };
 
 const mapStateToProps = state => ({
-  isOpen: state.floatBag.isOpen,
-  items: state.shoppingBag.items,
-  currency: state.currency.item
+  selectedSize: state.details.selectedSize,
+  selectedColor: state.details.selectedColor,
+  selectedQty: state.details.selectedQty,
+  currency: state.currency.item,
+  bagItems: state.shoppingBag.items,
 });
 
-export default connect(mapStateToProps, {updateBag, toggleFloat})(FloatBag);
+export default connect(mapStateToProps, {toggleFloat, selectSize, selectColor, selectQty, updateBag, updateItem})(Form);
