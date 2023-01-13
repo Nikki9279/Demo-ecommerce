@@ -40,6 +40,6 @@
     "babel-preset-react": "^6.24.1",
     "node-sass": "^4.9.1",
     "webpack": "^4.15.1",
-    "webpack-cli": "^3.0.8"
+    "webpack-cli": "^3.3.12"
   }
 }
